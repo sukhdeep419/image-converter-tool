@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import JSZip from "jszip";
 
 type OutputFormat = "jpg" | "png" | "webp" | "avif";
 
 type StatusState = "idle" | "converting" | "done" | "error";
+
+type ConvertedImage = {
+  name: string;
+  url: string;
+};
 
 const MAX_FILES = 50;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
@@ -23,13 +29,14 @@ const formatBytes = (bytes: number) => {
   return `${(bytes / Math.pow(1024, index)).toFixed(1)} ${units[index]}`;
 };
 
-export default function ToolPage() {
+export default function ConverterTool() {
   const [files, setFiles] = useState<File[]>([]);
   const [format, setFormat] = useState<OutputFormat>("jpg");
   const [quality, setQuality] = useState(90);
   const [status, setStatus] = useState<StatusState>("idle");
   const [message, setMessage] = useState("");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [convertedImages, setConvertedImages] = useState<ConvertedImage[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -43,8 +50,11 @@ export default function ToolPage() {
       if (downloadUrl) {
         URL.revokeObjectURL(downloadUrl);
       }
+      convertedImages.forEach(img => {
+        URL.revokeObjectURL(img.url);
+      });
     };
-  }, [downloadUrl]);
+  }, [downloadUrl, convertedImages]);
 
   const addFiles = (incoming: File[]) => {
     let notice = "";
@@ -123,15 +133,25 @@ export default function ToolPage() {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       setDownloadUrl(url);
-      setStatus("done");
-      setMessage("Conversion complete. Your download should start now.");
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "converted-images.zip";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const zip = new JSZip();
+      const loadedZip = await zip.loadAsync(blob);
+      const extractedImages: ConvertedImage[] = [];
+      
+      for (const relativePath of Object.keys(loadedZip.files)) {
+        const zipEntry = loadedZip.files[relativePath];
+        if (!zipEntry.dir) {
+          const fileBlob = await zipEntry.async("blob");
+          extractedImages.push({
+            name: zipEntry.name,
+            url: URL.createObjectURL(fileBlob)
+          });
+        }
+      }
+      setConvertedImages(extractedImages);
+
+      setStatus("done");
+      setMessage("Conversion complete. You can now preview and download your files.");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Something went wrong.";
@@ -147,7 +167,8 @@ export default function ToolPage() {
   const qualityEnabled = format !== "png";
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+    <>
+      <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
       <section className="space-y-6">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--muted)]">
@@ -294,21 +315,11 @@ export default function ToolPage() {
           <button
             type="button"
             onClick={handleConvert}
-            disabled={status === "converting"}
+            disabled={status === "converting" || files.length === 0}
             className="mt-6 w-full rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition hover:translate-y-[-2px] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {status === "converting" ? "Converting..." : "Convert and download"}
+            {status === "converting" ? "Converting..." : "Convert"}
           </button>
-
-          {downloadUrl && status === "done" ? (
-            <a
-              href={downloadUrl}
-              download="converted-images.zip"
-              className="mt-3 block text-center text-sm font-semibold text-[color:var(--foreground)]"
-            >
-              Download again
-            </a>
-          ) : null}
 
           {message ? (
             <p
@@ -335,5 +346,55 @@ export default function ToolPage() {
         </div>
       </aside>
     </div>
+
+    {convertedImages.length > 0 && status === "done" && (
+      <div className="mt-10 rounded-3xl border border-black/10 bg-white/90 p-8 shadow-[var(--shadow-lg)] animate-[fade-up_0.8s_ease-out]">
+        <h2 className="text-2xl font-[var(--font-display)] text-[color:var(--foreground)]">
+          Conversion Results
+        </h2>
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+          {convertedImages.map((img, i) => (
+            <div key={i} className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-[color:var(--background)] p-4 shadow-[var(--shadow-sm)]">
+              <div className="aspect-square w-full relative overflow-hidden rounded-xl bg-black/5 flex items-center justify-center p-2">
+                <img src={img.url} alt={img.name} className="max-h-full max-w-full object-contain drop-shadow-md" />
+              </div>
+              <p className="truncate text-sm font-semibold text-[color:var(--foreground)] text-center" title={img.name}>
+                {img.name}
+              </p>
+              <div className="flex flex-col gap-2 mt-auto">
+                <a
+                  href={img.url}
+                  download={img.name}
+                  className="w-full text-center rounded-full bg-[color:var(--foreground)] px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                >
+                  Download {format.toUpperCase()}
+                </a>
+                {convertedImages.length === 1 && downloadUrl && (
+                   <a
+                    href={downloadUrl}
+                    download="converted-images.zip"
+                    className="w-full text-center rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold text-[color:var(--foreground)] transition hover:bg-black/5"
+                  >
+                    Download ZIP
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {convertedImages.length > 1 && downloadUrl && (
+          <div className="mt-8 flex justify-center">
+            <a
+              href={downloadUrl}
+              download="converted-images.zip"
+              className="rounded-full bg-[color:var(--accent)] px-8 py-3 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition hover:translate-y-[-2px]"
+            >
+              Download All as ZIP
+            </a>
+          </div>
+        )}
+      </div>
+    )}
+    </>
   );
 }

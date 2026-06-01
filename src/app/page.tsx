@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ConverterTool from "./ConverterTool";
 
 export default function Home() {
   return (
@@ -13,7 +14,7 @@ export default function Home() {
               Convert entire folders of images without losing control of quality.
             </h1>
             <p className="max-w-xl text-lg text-[color:var(--muted)]">
-              Format Foundry keeps your images crisp while switching between JPG,
+              FormIt keeps your images crisp while switching between JPG,
               PNG, WEBP, and more. Upload up to 50 files at once, adjust quality,
               and download a single clean bundle.
             </p>
@@ -21,7 +22,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-4">
             <Link
               className="rounded-full bg-[color:var(--accent)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-lg)] transition hover:translate-y-[-2px]"
-              href="/tool"
+              href="#converter"
             >
               Open the converter
             </Link>
@@ -93,6 +94,10 @@ export default function Home() {
             bundled immediately after conversion.
           </div>
         </div>
+      </section>
+
+      <section id="converter" className="mt-8 animate-[fade-up_0.8s_ease-out]" style={{ animationDelay: "200ms" }}>
+        <ConverterTool />
       </section>
     </div>
   );

@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Fraunces, Space_Grotesk } from "next/font/google";
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
-const fraunces = Fraunces({
+const outfit = Outfit({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Format Foundry",
+  title: "FormIt",
   description:
     "Convert batches of images between JPG, PNG, WEBP, and more without losing control of quality.",
 };
@@ -29,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceGrotesk.variable} ${fraunces.variable} antialiased`}
+        className={`${inter.variable} ${outfit.variable} antialiased`}
       >
         <div className="relative min-h-screen">
           <div
@@ -43,11 +41,11 @@ export default function RootLayout({
           <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 pb-6 pt-8">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--accent)] text-sm font-semibold text-white shadow-[var(--shadow-sm)]">
-                FF
+                FI
               </span>
               <div>
                 <p className="text-sm uppercase tracking-[0.2em] text-[color:var(--muted)]">
-                  Format Foundry
+                  FormIt
                 </p>
                 <p className="text-lg font-semibold text-[color:var(--foreground)]">
                   Image Converter
@@ -57,9 +55,6 @@ export default function RootLayout({
             <nav className="flex items-center gap-6 text-sm font-medium text-[color:var(--muted)]">
               <Link className="transition hover:text-[color:var(--foreground)]" href="/">
                 Home
-              </Link>
-              <Link className="transition hover:text-[color:var(--foreground)]" href="/tool">
-                Tool
               </Link>
               <Link className="transition hover:text-[color:var(--foreground)]" href="/contact">
                 Contact

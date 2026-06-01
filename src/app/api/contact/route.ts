@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 
   try {
     await transporter.sendMail({
-      from: `Format Foundry <${smtpUser}>`,
+      from: `FormIt <${smtpUser}>`,
       to: contactTo,
       replyTo: email,
       subject,
