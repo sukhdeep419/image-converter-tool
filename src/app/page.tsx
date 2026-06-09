@@ -6,14 +6,14 @@ export default function Home() {
     <div className="flex flex-col gap-16">
       <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-8 animate-[fade-up_0.8s_ease-out]">
-          <div className="inline-flex items-center gap-3 rounded-full border border-black/10 bg-white/70 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[color:var(--muted)] shadow-[var(--shadow-sm)]">
+          <div className="inline-flex items-center gap-3 rounded-full border border-black/10 bg-white/70 px-4 py-2 text-xs uppercase tracking-[0.3em] text-muted shadow-[var(--shadow-sm)]">
             Batch Image Conversion
           </div>
           <div className="space-y-5">
-            <h1 className="text-4xl font-[var(--font-display)] leading-tight text-[color:var(--foreground)] md:text-6xl">
+            <h1 className="text-4xl font-bold capitalize text-[color:var(--foreground)] md:text-4xl">
               Convert entire folders of images without losing control of quality.
             </h1>
-            <p className="max-w-xl text-lg text-[color:var(--muted)]">
+            <p className="max-w-xl text-lg text-muted">
               FormIt keeps your images crisp while switching between JPG,
               PNG, WEBP, and more. Upload up to 50 files at once, adjust quality,
               and download a single clean bundle.
@@ -41,7 +41,7 @@ export default function Home() {
             ].map((item, index) => (
               <div
                 key={item}
-                className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-[color:var(--muted)] shadow-[var(--shadow-sm)] animate-[fade-up_0.8s_ease-out]"
+                className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-muted shadow-[var(--shadow-sm)] animate-[fade-up_0.8s_ease-out]"
                 style={{ animationDelay: `${index * 120}ms` }}
               >
                 <p className="text-base font-semibold text-[color:var(--foreground)]">
@@ -56,7 +56,7 @@ export default function Home() {
         </div>
         <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-[var(--shadow-lg)] animate-[fade-up_0.8s_ease-out]" style={{ animationDelay: "140ms" }}>
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--muted)]">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted">
               Quick Preview
             </p>
             <span className="rounded-full bg-[color:var(--accent-2)] px-3 py-1 text-xs font-semibold text-[color:var(--foreground)]">
@@ -82,7 +82,7 @@ export default function Home() {
                   <p className="text-base font-semibold text-[color:var(--foreground)]">
                     {step.title}
                   </p>
-                  <p className="text-sm text-[color:var(--muted)]">
+                  <p className="text-sm text-muted">
                     {step.desc}
                   </p>
                 </div>
