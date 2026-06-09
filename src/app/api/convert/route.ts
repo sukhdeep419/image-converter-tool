@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const MAX_FILES = 50;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 
-const supportedFormats = new Set(["jpg", "jpeg", "png", "webp", "avif"]);
+const supportedFormats = new Set(["jpg", "jpeg", "png", "webp", "avif", "original"]);
 
 const sanitizeBaseName = (name: string) => {
   const base = name.replace(/\.[^/.]+$/, "") || "image";
@@ -62,28 +62,40 @@ export async function POST(request: Request) {
       const buffer = Buffer.from(await file.arrayBuffer());
       let pipeline = sharp(buffer);
 
-      switch (format) {
-        case "jpg":
-        case "jpeg":
-          pipeline = pipeline.jpeg({ quality, mozjpeg: true });
-          break;
-        case "png":
-          pipeline = pipeline.png({ compressionLevel: 9, adaptiveFiltering: true });
-          break;
-        case "webp":
-          pipeline = pipeline.webp({ quality });
-          break;
-        case "avif":
-          pipeline = pipeline.avif({ quality });
-          break;
-        default:
-          pipeline = pipeline.jpeg({ quality, mozjpeg: true });
-          break;
+      let actualFormat = format;
+      if (format === "original") {
+        const ext = file.name.split('.').pop()?.toLowerCase() || "";
+        actualFormat = (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp" || ext === "avif") ? ext : "jpg";
       }
 
-      const outputBuffer = await pipeline.toBuffer();
+      let outputBuffer: Buffer;
+
+      if (format === "original" && actualFormat === "png") {
+        outputBuffer = buffer;
+      } else {
+        switch (actualFormat) {
+          case "jpg":
+          case "jpeg":
+            pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+            break;
+          case "png":
+            pipeline = pipeline.png({ compressionLevel: 9, adaptiveFiltering: true });
+            break;
+          case "webp":
+            pipeline = pipeline.webp({ quality });
+            break;
+          case "avif":
+            pipeline = pipeline.avif({ quality });
+            break;
+          default:
+            pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+            break;
+        }
+        outputBuffer = await pipeline.toBuffer();
+      }
+
       const baseName = sanitizeBaseName(file.name);
-      const extension = format === "jpeg" ? "jpg" : format;
+      const extension = actualFormat === "jpeg" ? "jpg" : actualFormat;
       const outputName = `${baseName}-${index + 1}.${extension}`;
 
       zip.file(outputName, outputBuffer);
