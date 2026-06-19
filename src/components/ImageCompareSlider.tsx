@@ -18,7 +18,7 @@ export default function ImageCompareSlider({
   const [sliderValue, setSliderValue] = useState(50);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl bg-black/5 aspect-video md:aspect-[16/9]">
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black/5">
       {/* Optimized (Bottom Layer) */}
       <img
         src={optimizedSrc}
@@ -46,7 +46,7 @@ export default function ImageCompareSlider({
 
       {/* Custom Slider Thumb / Line */}
       <div
-        className="absolute bottom-0 top-0 z-10 w-0.5 cursor-ew-resize bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] pointer-events-none"
+        className="compare-divider-shadow pointer-events-none absolute bottom-0 top-0 z-10 w-0.5 cursor-ew-resize bg-white"
         style={{ left: `${sliderValue}%` }}
       >
         <div className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md">
@@ -60,7 +60,7 @@ export default function ImageCompareSlider({
       <div className="absolute left-4 top-4 z-10 rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
         Original: {originalSize}
       </div>
-      <div className="absolute right-4 top-4 z-10 rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+      <div className="absolute right-4 top-4 z-10 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
         Optimized: {optimizedSize}
       </div>
     </div>

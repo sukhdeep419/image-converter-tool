@@ -20,6 +20,10 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
+  --shadow-formit-sm: var(--shadow-sm);
+  --shadow-formit-lg: var(--shadow-lg);
+  --animate-fade-up: fade-up 0.8s ease-out;
+  --animate-bounce: bounce 1.0s ease-in-out infinite;
 }
 
 body {
@@ -33,8 +37,63 @@ body {
   font-family: var(--font-sans), "Segoe UI", sans-serif;
 }
 
+p {
+  font-family: var(--font-sans), "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+}
+
 * {
   box-sizing: border-box;
+}
+
+.brand-label {
+  font-family: var(--font-sans), "Segoe UI", sans-serif !important;
+  letter-spacing: 0;
+}
+
+.eyebrow-label {
+  font-family: var(--font-sans), "Segoe UI", sans-serif !important;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+@media (min-width: 1024px) {
+  .home-hero-grid {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+
+  .tool-grid,
+  .contact-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.glow-accent {
+  background: radial-gradient(
+    circle,
+    rgba(242, 116, 87, 0.35),
+    transparent 70%
+  );
+}
+
+.glow-gold {
+  background: radial-gradient(
+    circle,
+    rgba(246, 196, 83, 0.3),
+    transparent 70%
+  );
+}
+
+.compare-divider-shadow {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 ::selection {
@@ -61,5 +120,14 @@ body {
   }
   100% {
     transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
   }
 }

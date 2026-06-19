@@ -257,7 +257,7 @@ export default function ConverterTool() {
     <>
       {/* Centered header */}
       <div className="text-center space-y-5">
-        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--muted)]">
+        <p className="eyebrow-label text-lg text-primary">
           {activeMode === "converter" ? "Conversion Tool" : "Optimization Tool"}
         </p>
         <div className="flex justify-center">
@@ -266,8 +266,8 @@ export default function ConverterTool() {
               onClick={() => handleModeChange("converter")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                 activeMode === "converter"
-                  ? "bg-white text-[color:var(--foreground)] shadow-[var(--shadow-sm)]"
-                  : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+                  ? "bg-white text-foreground shadow-formit-sm"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               Converter
@@ -276,18 +276,18 @@ export default function ConverterTool() {
               onClick={() => handleModeChange("optimizer")}
               className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                 activeMode === "optimizer"
-                  ? "bg-white text-[color:var(--foreground)] shadow-[var(--shadow-sm)]"
-                  : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+                  ? "bg-white text-foreground shadow-formit-sm"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               Optimizer
             </button>
           </div>
         </div>
-        <h1 className="text-3xl font-[var(--font-display)] text-[color:var(--foreground)] md:text-4xl">
+        <h1 className="text-3xl font-display text-foreground md:text-4xl">
           {activeMode === "converter" ? "Convert batches in one pass." : "Optimize sizes instantly."}
         </h1>
-        <p className="mx-auto max-w-xl text-base text-[color:var(--muted)]">
+        <p className="mx-auto max-w-xl text-base text-muted">
           {activeMode === "converter"
             ? "Upload up to 50 images (max 50 MB total), select a target format, and download a single zip with your converted files."
             : "Upload up to 50 images to compress their file sizes without changing their original formats."}
@@ -295,7 +295,7 @@ export default function ConverterTool() {
       </div>
 
       {/* Tool row: upload + settings side by side */}
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="tool-grid mt-10 grid gap-8">
       <section className="space-y-6">
         <div
           onDragOver={(event) => {
@@ -307,22 +307,22 @@ export default function ConverterTool() {
           onClick={() => inputRef.current?.click()}
           className={`cursor-pointer rounded-3xl border-2 border-dashed p-8 transition ${
             isDragging
-              ? "border-[color:var(--accent)] bg-white"
+              ? "border-accent bg-white"
               : "border-black/10 bg-white/70 hover:bg-white/90"
           }`}
         >
           <div className="flex flex-col items-center gap-4 text-center">
             <button
               type="button"
-              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--accent-2)] text-lg font-semibold text-[color:var(--foreground)] shadow-[var(--shadow-sm)] transition hover:scale-105"
+              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-2 text-lg font-semibold text-foreground shadow-formit-sm transition hover:scale-105"
             >
               +
             </button>
             <div>
-              <p className="text-base font-semibold text-[color:var(--foreground)]">
+              <p className="text-base font-semibold text-foreground">
                 Drop images here
               </p>
-              <p className="text-sm text-[color:var(--muted)]">
+              <p className="text-sm text-muted">
                 or browse your files to add multiple images at once.
               </p>
             </div>
@@ -332,7 +332,7 @@ export default function ConverterTool() {
                 e.stopPropagation();
                 inputRef.current?.click();
               }}
-              className="rounded-full bg-[color:var(--foreground)] px-5 py-2 text-sm font-semibold text-white transition hover:translate-y-[-2px]"
+              className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
             >
               Browse files
             </button>
@@ -347,18 +347,18 @@ export default function ConverterTool() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-[var(--shadow-sm)]">
+        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-formit-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-[color:var(--foreground)]">
+            <p className="text-sm font-semibold text-foreground">
               Selected files
             </p>
-            <p className="text-xs text-[color:var(--muted)]">
+            <p className="text-xs text-muted">
               {files.length} / {MAX_FILES} files, {formatBytes(totalBytes)} used
             </p>
           </div>
 
           {files.length === 0 ? (
-            <p className="mt-4 text-sm text-[color:var(--muted)]">
+            <p className="mt-4 text-sm text-muted">
               No files selected yet.
             </p>
           ) : (
@@ -366,20 +366,20 @@ export default function ConverterTool() {
               {files.map((file, index) => (
                 <li
                   key={`${file.name}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-black/10 bg-[color:var(--background)] px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl border border-black/10 bg-background px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-[color:var(--foreground)]">
+                    <p className="text-sm font-semibold text-foreground">
                       {file.name}
                     </p>
-                    <p className="text-xs text-[color:var(--muted)]">
+                    <p className="text-xs text-muted">
                       {formatBytes(file.size)}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-[color:var(--foreground)] transition hover:bg-white"
+                    className="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-foreground transition hover:bg-white"
                   >
                     Remove
                   </button>
@@ -391,20 +391,20 @@ export default function ConverterTool() {
       </section>
 
       <aside className="space-y-6">
-        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-[var(--shadow-lg)]">
-          <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
+        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-formit-lg">
+          <h2 className="text-lg font-semibold text-foreground">
             Output settings
           </h2>
           <div className="mt-5 space-y-5">
             {activeMode === "converter" && (
-              <label className="block text-sm font-semibold text-[color:var(--foreground)]">
+              <label className="block text-sm font-semibold text-foreground">
                 Format
                 <select
                   value={format}
                   onChange={(event) =>
                     setFormat(event.target.value as OutputFormat)
                   }
-                  className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-[color:var(--foreground)]"
+                  className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-foreground"
                 >
                   {formatOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -416,7 +416,7 @@ export default function ConverterTool() {
             )}
 
             {activeMode === "optimizer" && (
-              <label className="block text-sm font-semibold text-[color:var(--foreground)]">
+              <label className="block text-sm font-semibold text-foreground">
                 Quality
                 <input
                   type="range"
@@ -427,9 +427,9 @@ export default function ConverterTool() {
                   onChange={(event) => setQuality(Number(event.target.value))}
                   className="mt-3 w-full"
                 />
-                <div className="mt-2 flex items-center justify-between text-xs text-[color:var(--muted)]">
+                <div className="mt-2 flex items-center justify-between text-xs text-muted">
                   <span>{qualityEnabled ? "Higher is cleaner" : "Not used for PNG"}</span>
-                  <span className="text-sm font-semibold text-[color:var(--foreground)]">
+                  <span className="text-sm font-semibold text-foreground">
                     {quality}
                   </span>
                 </div>
@@ -441,7 +441,7 @@ export default function ConverterTool() {
             type="button"
             onClick={handleConvert}
             disabled={status === "converting" || files.length === 0}
-            className="mt-6 w-full rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition hover:translate-y-[-2px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-6 w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-formit-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {status === "converting" ? "Processing..." : (activeMode === "converter" ? "Convert" : "Optimize")}
           </button>
@@ -451,7 +451,7 @@ export default function ConverterTool() {
               className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
                 status === "error"
                   ? "bg-red-50 text-red-700"
-                  : "bg-[color:var(--background)] text-[color:var(--muted)]"
+                  : "bg-background text-muted"
               }`}
             >
               {message}
@@ -463,15 +463,15 @@ export default function ConverterTool() {
     </div>
 
     {convertedImages.length > 0 && status === "done" && (
-      <div className="mt-10 rounded-3xl border border-black/10 bg-white/90 p-8 shadow-[var(--shadow-lg)] animate-[fade-up_0.8s_ease-out]">
+      <div className="mt-10 rounded-3xl border border-black/10 bg-white/90 p-8 shadow-formit-lg animate-fade-up">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-[var(--font-display)] text-[color:var(--foreground)]">
+          <h2 className="text-2xl font-display text-foreground">
             {activeMode === "converter" ? "Conversion Results" : "Optimization Results"}
           </h2>
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--foreground)] shadow-[var(--shadow-sm)] transition hover:bg-black/5"
+            className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-foreground shadow-formit-sm transition hover:bg-black/5"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -481,16 +481,16 @@ export default function ConverterTool() {
         </div>
         <div className="mt-6 flex flex-col gap-8">
           {convertedImages.map((img, i) => (
-            <div key={i} className="flex flex-col gap-6 rounded-3xl border border-black/10 bg-[color:var(--background)] p-6 shadow-[var(--shadow-sm)]">
+            <div key={i} className="flex flex-col gap-6 rounded-3xl border border-black/10 bg-background p-6 shadow-formit-sm">
               <div className="flex items-center justify-between">
-                <p className="truncate text-base font-semibold text-[color:var(--foreground)]" title={img.name}>
+                <p className="truncate text-base font-semibold text-foreground" title={img.name}>
                   {img.name}
                 </p>
                 <div className="flex items-center gap-3">
                   <a
                     href={img.url}
                     download={img.name}
-                    className="rounded-full bg-[color:var(--foreground)] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
                   >
                     Download {activeMode === "converter" ? format.toUpperCase() : "Optimized"}
                   </a>
@@ -498,7 +498,7 @@ export default function ConverterTool() {
                      <a
                       href={downloadUrl}
                       download="converted-images.zip"
-                      className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--foreground)] transition hover:bg-black/5"
+                      className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-black/5"
                     >
                       Download ZIP
                     </a>
@@ -526,7 +526,7 @@ export default function ConverterTool() {
             <a
               href={downloadUrl}
               download="converted-images.zip"
-              className="rounded-full bg-[color:var(--accent)] px-8 py-3 text-sm font-semibold text-white shadow-[var(--shadow-sm)] transition hover:translate-y-[-2px]"
+              className="rounded-full bg-accent px-8 py-3 text-sm font-semibold text-white shadow-formit-sm transition hover:-translate-y-0.5"
             >
               Download All as ZIP
             </a>

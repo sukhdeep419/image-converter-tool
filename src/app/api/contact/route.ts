@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,22 @@ const isValidEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
+const createSupabaseClient = (request: Request) => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const authorization = request.headers.get("authorization");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: authorization ? { Authorization: authorization } : {},
+    },
+  });
+};
+
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   if (!checkRateLimit(ip)) {
@@ -79,40 +96,69 @@ export async function POST(request: Request) {
     );
   }
 
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const contactTo = process.env.CONTACT_TO ?? smtpUser;
-
-  if (!smtpUser || !smtpPass || !contactTo) {
+  const supabase = createSupabaseClient(request);
+  if (!supabase) {
     return NextResponse.json(
-      { error: "Email service is not configured." },
+      { error: "Supabase is not configured." },
       { status: 500 }
     );
   }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const subject = `Contact form: ${name}`;
-  const text = `Name: ${name}\nEmail: ${email}\nIP: ${ip}\n\n${message}`;
+  const { data: submission, error: insertError } = await supabase
+    .from("contact_submissions")
+    .insert({
+      name,
+      email,
+      message,
+      user_id: user?.id ?? null,
+    })
+    .select("id, created_at")
+    .single();
 
-  try {
-    await transporter.sendMail({
-      from: `FormIt <${smtpUser}>`,
-      to: contactTo,
-      replyTo: email,
-      subject,
-      text,
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const contactTo = process.env.CONTACT_TO ?? smtpUser;
+
+  let emailSent = false;
+
+  if (smtpUser && smtpPass && contactTo) {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
     });
 
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Send failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const subject = `Contact form: ${name}`;
+    const text = `Name: ${name}\nEmail: ${email}\nUser ID: ${
+      user?.id ?? "anonymous"
+    }\nSubmission ID: ${submission.id}\nIP: ${ip}\n\n${message}`;
+
+    try {
+      await transporter.sendMail({
+        from: `FormIt <${smtpUser}>`,
+        to: contactTo,
+        replyTo: email,
+        subject,
+        text,
+      });
+      emailSent = true;
+    } catch {
+      emailSent = false;
+    }
   }
+
+  return NextResponse.json(
+    { ok: true, submission, emailSent },
+    { status: 200 }
+  );
 }
