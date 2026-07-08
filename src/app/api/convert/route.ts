@@ -5,8 +5,12 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Disable sharp cache to prevent memory hoarding in serverless environments
+sharp.cache(false);
+
 const MAX_FILES = 50;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+const CONCURRENCY_LIMIT = 5;
 
 const supportedFormats = new Set(["jpg", "jpeg", "png", "webp", "avif", "original"]);
 
@@ -21,6 +25,62 @@ const sanitizeBaseName = (name: string) => {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
+
+async function processFile(file: File, index: number, format: string, quality: number) {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = file.name.split('.').pop()?.toLowerCase() || "";
+  let actualFormat = format;
+
+  if (format === "original") {
+    actualFormat = (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp" || ext === "avif") ? ext : "jpg";
+  }
+
+  // Base sharp instance. Metadata is stripped automatically unless .withMetadata() is called.
+  let pipeline = sharp(buffer);
+  let outputBuffer: Buffer;
+
+  switch (actualFormat) {
+    case "jpg":
+    case "jpeg":
+      pipeline = pipeline.jpeg({ quality, mozjpeg: true, progressive: true });
+      break;
+    case "png":
+      pipeline = pipeline.png({ compressionLevel: 8, adaptiveFiltering: true, effort: 7 });
+      break;
+    case "webp":
+      pipeline = pipeline.webp({ quality, effort: 4 });
+      break;
+    case "avif":
+      // Lower effort for avif to drastically speed up processing time on Vercel
+      pipeline = pipeline.avif({ quality, effort: 3 }); 
+      break;
+    default:
+      pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+      break;
+  }
+
+  try {
+    outputBuffer = await pipeline.toBuffer();
+  } catch (err) {
+    console.error("Sharp processing failed for file", file.name, err);
+    outputBuffer = buffer; // Fallback to original buffer
+  }
+
+  // Guardrail: Ensure output is never larger than input if we are optimizing or keeping same format
+  let finalBuffer = outputBuffer;
+  let finalExtension = actualFormat === "jpeg" ? "jpg" : actualFormat;
+
+  // The fix: only revert if we are optimizing ("original") or converting to the EXACT same format as input
+  if (outputBuffer.length >= buffer.length && (format === "original" || ext === actualFormat)) {
+    finalBuffer = buffer;
+    finalExtension = ext === "jpeg" ? "jpg" : (ext || "jpg");
+  }
+
+  const baseName = sanitizeBaseName(file.name);
+  const outputName = `${baseName}-${index + 1}.${finalExtension}`;
+
+  return { outputName, finalBuffer };
+}
 
 export async function POST(request: Request) {
   try {
@@ -57,54 +117,25 @@ export async function POST(request: Request) {
     }
 
     const zip = new JSZip();
+    const results = [];
 
-    for (const [index, file] of files.entries()) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      let pipeline = sharp(buffer);
+    // Process files concurrently in chunks to prevent memory explosion
+    let i = 0;
+    while (i < files.length) {
+      const chunk = files.slice(i, i + CONCURRENCY_LIMIT);
+      const chunkPromises = chunk.map((file, idx) => processFile(file, i + idx, format, quality));
+      const chunkResults = await Promise.all(chunkPromises);
+      results.push(...chunkResults);
+      i += CONCURRENCY_LIMIT;
+    }
 
-      let actualFormat = format;
-      if (format === "original") {
-        const ext = file.name.split('.').pop()?.toLowerCase() || "";
-        actualFormat = (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp" || ext === "avif") ? ext : "jpg";
-      }
-
-      let outputBuffer: Buffer;
-
-      if (format === "original" && actualFormat === "png") {
-        outputBuffer = buffer;
-      } else {
-        switch (actualFormat) {
-          case "jpg":
-          case "jpeg":
-            pipeline = pipeline.jpeg({ quality, mozjpeg: true });
-            break;
-          case "png":
-            pipeline = pipeline.png({ compressionLevel: 9, adaptiveFiltering: true });
-            break;
-          case "webp":
-            pipeline = pipeline.webp({ quality });
-            break;
-          case "avif":
-            pipeline = pipeline.avif({ quality });
-            break;
-          default:
-            pipeline = pipeline.jpeg({ quality, mozjpeg: true });
-            break;
-        }
-        outputBuffer = await pipeline.toBuffer();
-      }
-
-      const baseName = sanitizeBaseName(file.name);
-      const extension = actualFormat === "jpeg" ? "jpg" : actualFormat;
-      const outputName = `${baseName}-${index + 1}.${extension}`;
-
-      zip.file(outputName, outputBuffer);
+    for (const res of results) {
+      zip.file(res.outputName, res.finalBuffer);
     }
 
     const zipBuffer = await zip.generateAsync({
       type: "uint8array",
-      compression: "DEFLATE",
-      compressionOptions: { level: 9 },
+      compression: "STORE", // MASSIVE SPEEDUP: Do not double-compress already compressed images
     });
 
     const safeBuffer = Uint8Array.from(zipBuffer);

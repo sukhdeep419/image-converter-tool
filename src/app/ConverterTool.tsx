@@ -47,6 +47,38 @@ const initialModeResults: ModeResults = {
   convertedImages: [],
 };
 
+function FilePreview({ file, onRemove }: { file: File, onRemove: () => void }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  return (
+    <div className="snap-center shrink-0 flex items-center gap-3 rounded-full bg-white/80 backdrop-blur-sm p-2 pr-4 shadow-sm border border-black/5 transition hover:bg-white">
+      <div className="w-12 h-12 rounded-full overflow-hidden bg-black/5 flex items-center justify-center shrink-0">
+        {url && <img src={url} alt={file.name} className="w-full h-full object-cover" />}
+      </div>
+      <div className="flex flex-col">
+        <p className="text-sm font-semibold text-foreground max-w-[120px] truncate" title={file.name}>
+          {file.name}
+        </p>
+        <p className="text-xs text-muted">
+          {formatBytes(file.size)}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-1 flex items-center justify-center w-6 h-6 rounded-full border border-black/10 text-muted hover:bg-black/5 hover:text-foreground transition shrink-0"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+      </button>
+    </div>
+  );
+}
+
 export default function ConverterTool() {
   const [files, setFiles] = useState<File[]>([]);
   const [format, setFormat] = useState<OutputFormat>("jpg");
@@ -155,7 +187,7 @@ export default function ConverterTool() {
       const formData = new FormData();
       files.forEach((file) => formData.append("images", file));
       formData.append("format", activeMode === "optimizer" ? "original" : format);
-      formData.append("quality", String(activeMode === "converter" ? 100 : quality));
+      formData.append("quality", String(quality));
 
       const response = await fetch("/api/convert", {
         method: "POST",
@@ -255,48 +287,38 @@ export default function ConverterTool() {
 
   return (
     <>
-      {/* Centered header */}
-      <div className="text-center space-y-5">
-        <p className="eyebrow-label text-lg text-primary">
+      {/* Top Bar */}
+      <div className="flex justify-between items-center mb-8 px-4 w-full max-w-[95vw] mx-auto mt-6">
+        <h1 className="text-xl font-bold text-foreground tracking-tight">
           {activeMode === "converter" ? "Conversion Tool" : "Optimization Tool"}
-        </p>
-        <div className="flex justify-center">
-          <div className="flex w-fit rounded-full bg-black/5 p-1">
-            <button
-              onClick={() => handleModeChange("converter")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                activeMode === "converter"
-                  ? "bg-white text-foreground shadow-formit-sm"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              Converter
-            </button>
-            <button
-              onClick={() => handleModeChange("optimizer")}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                activeMode === "optimizer"
-                  ? "bg-white text-foreground shadow-formit-sm"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              Optimizer
-            </button>
-          </div>
-        </div>
-        <h1 className="text-3xl font-display text-foreground md:text-4xl">
-          {activeMode === "converter" ? "Convert batches in one pass." : "Optimize sizes instantly."}
         </h1>
-        <p className="mx-auto max-w-xl text-base text-muted">
-          {activeMode === "converter"
-            ? "Upload up to 50 images (max 50 MB total), select a target format, and download a single zip with your converted files."
-            : "Upload up to 50 images to compress their file sizes without changing their original formats."}
-        </p>
+        <div className="flex w-fit rounded-full bg-black/5 p-1 shadow-inner">
+          <button
+            onClick={() => handleModeChange("converter")}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+              activeMode === "converter"
+                ? "bg-foreground text-white shadow-formit-sm"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Converter
+          </button>
+          <button
+            onClick={() => handleModeChange("optimizer")}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+              activeMode === "optimizer"
+                ? "bg-foreground text-white shadow-formit-sm"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            Optimizer
+          </button>
+        </div>
       </div>
 
-      {/* Tool row: upload + settings side by side */}
-      <div className="tool-grid mt-10 grid gap-8">
-      <section className="space-y-6">
+      {/* Massive Dropzone Area */}
+      <div className="w-full max-w-[95vw] mx-auto min-h-[75vh] relative rounded-[32px] border-2 border-dashed border-black/15 bg-transparent p-8 flex flex-col items-center justify-center transition-all duration-300">
+        
         <div
           onDragOver={(event) => {
             event.preventDefault();
@@ -304,107 +326,77 @@ export default function ConverterTool() {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          className={`cursor-pointer rounded-3xl border-2 border-dashed p-8 transition ${
-            isDragging
-              ? "border-accent bg-white"
-              : "border-black/10 bg-white/70 hover:bg-white/90"
+          onClick={(e) => {
+             // Only trigger if they didn't click inside the settings panel or a file remove button
+             if ((e.target as HTMLElement).closest('.settings-panel, .file-remove-btn')) return;
+             inputRef.current?.click();
+          }}
+          className={`absolute inset-0 rounded-[32px] cursor-pointer transition-colors ${
+            isDragging ? "bg-white/50 border-black/30 border-2" : "hover:bg-white/30"
           }`}
-        >
-          <div className="flex flex-col items-center gap-4 text-center">
-            <button
-              type="button"
-              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-2 text-lg font-semibold text-foreground shadow-formit-sm transition hover:scale-105"
-            >
-              +
-            </button>
-            <div>
-              <p className="text-base font-semibold text-foreground">
-                Drop images here
-              </p>
-              <p className="text-sm text-muted">
-                or browse your files to add multiple images at once.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                inputRef.current?.click();
-              }}
-              className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-            >
-              Browse files
-            </button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFilePick}
-              className="hidden"
-            />
+        />
+
+        <div className="flex flex-col items-center text-center z-10 pointer-events-none mt-10">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-[1.25rem] bg-[#eeb056] shadow-sm mb-6 flex items-center justify-center">
+            {/* Inner aesthetic (if any) could go here */}
           </div>
-        </div>
-
-        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-formit-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">
-              Selected files
-            </p>
-            <p className="text-xs text-muted">
-              {files.length} / {MAX_FILES} files, {formatBytes(totalBytes)} used
-            </p>
-          </div>
-
-          {files.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">
-              No files selected yet.
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {files.map((file, index) => (
-                <li
-                  key={`${file.name}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-black/10 bg-background px-4 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {file.name}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {formatBytes(file.size)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    className="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-foreground transition hover:bg-white"
-                  >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <aside className="space-y-6">
-        <div className="rounded-3xl border border-black/10 bg-white/90 p-6 shadow-formit-lg">
-          <h2 className="text-lg font-semibold text-foreground">
-            Output settings
+          
+          <h2 className="text-3xl font-display text-foreground font-bold mb-2">
+            Drop images anywhere
           </h2>
-          <div className="mt-5 space-y-5">
+          <p className="text-sm text-muted font-medium">
+            or browse — up to 50 files, 50 MB total
+          </p>
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFilePick}
+            className="hidden"
+          />
+        </div>
+
+        {/* Selected Files Tags */}
+        {files.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-8 z-10 max-w-3xl">
+            {files.map((file, index) => (
+              <div 
+                key={`${file.name}-${index}`}
+                className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold text-foreground shadow-sm"
+              >
+                <span className="truncate max-w-[120px]">{file.name}</span>
+                <span className="text-muted/50">·</span>
+                <span className="text-muted font-medium">{formatBytes(file.size)}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                  }}
+                  className="file-remove-btn ml-1 text-muted hover:text-foreground transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Floating Settings Panel */}
+        <div className="settings-panel absolute bottom-6 right-6 md:bottom-10 md:right-10 z-20 w-full max-w-[300px] rounded-2xl bg-white p-6 shadow-formit-lg border border-black/5">
+          <h3 className="text-[15px] font-bold text-foreground mb-4">Output settings</h3>
+          
+          <div className="flex flex-col gap-3">
+            {/* Format Dropdown */}
             {activeMode === "converter" && (
-              <label className="block text-sm font-semibold text-foreground">
-                Format
+              <div className="relative">
                 <select
                   value={format}
-                  onChange={(event) =>
-                    setFormat(event.target.value as OutputFormat)
-                  }
-                  className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-foreground"
+                  onChange={(event) => setFormat(event.target.value as OutputFormat)}
+                  className="w-full appearance-none rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#e77a5b] shadow-sm"
                 >
                   {formatOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -412,55 +404,56 @@ export default function ConverterTool() {
                     </option>
                   ))}
                 </select>
-              </label>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-foreground/50">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
             )}
 
-            {activeMode === "optimizer" && (
-              <label className="block text-sm font-semibold text-foreground">
-                Quality
-                <input
-                  type="range"
-                  min={60}
-                  max={100}
-                  value={quality}
-                  disabled={!qualityEnabled}
-                  onChange={(event) => setQuality(Number(event.target.value))}
-                  className="mt-3 w-full"
-                />
-                <div className="mt-2 flex items-center justify-between text-xs text-muted">
-                  <span>{qualityEnabled ? "Higher is cleaner" : "Not used for PNG"}</span>
-                  <span className="text-sm font-semibold text-foreground">
-                    {quality}
-                  </span>
-                </div>
-              </label>
+            {/* Quality Dropdown */}
+            <div className="relative">
+              <select
+                value={quality}
+                disabled={!qualityEnabled}
+                onChange={(event) => setQuality(Number(event.target.value))}
+                className="w-full appearance-none rounded-lg border border-black/15 bg-white px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#e77a5b] shadow-sm disabled:opacity-50"
+              >
+                <option value={100}>Maximum quality</option>
+                <option value={90}>High quality</option>
+                <option value={75}>Medium quality</option>
+                <option value={60}>Low quality</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-foreground/50">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+
+            {/* Convert Button */}
+            <button
+              type="button"
+              onClick={handleConvert}
+              disabled={status === "converting" || files.length === 0}
+              className="w-full rounded-xl bg-[#de7f62] px-4 py-3 mt-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#d47052] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {status === "converting" ? "Processing..." : `Convert ${files.length} file${files.length !== 1 ? 's' : ''}`}
+            </button>
+            
+            {/* Status Footer */}
+            {message ? (
+              <p className="text-center text-xs text-muted mt-2 font-medium">
+                {message}
+              </p>
+            ) : status === "done" ? (
+              <p className="text-center text-xs text-muted mt-2 font-medium">
+                {files.length} done · <a href="#results" className="underline hover:text-foreground">View results</a>
+              </p>
+            ) : (
+              <div className="h-5 mt-2"></div>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={handleConvert}
-            disabled={status === "converting" || files.length === 0}
-            className="mt-6 w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-formit-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {status === "converting" ? "Processing..." : (activeMode === "converter" ? "Convert" : "Optimize")}
-          </button>
-
-          {message ? (
-            <p
-              className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-                status === "error"
-                  ? "bg-red-50 text-red-700"
-                  : "bg-background text-muted"
-              }`}
-            >
-              {message}
-            </p>
-          ) : null}
         </div>
 
-      </aside>
-    </div>
+      </div>
 
     {convertedImages.length > 0 && status === "done" && (
       <div className="mt-10 rounded-3xl border border-black/10 bg-white/90 p-8 shadow-formit-lg animate-fade-up">
@@ -483,9 +476,26 @@ export default function ConverterTool() {
           {convertedImages.map((img, i) => (
             <div key={i} className="flex flex-col gap-6 rounded-3xl border border-black/10 bg-background p-6 shadow-formit-sm">
               <div className="flex items-center justify-between">
-                <p className="truncate text-base font-semibold text-foreground" title={img.name}>
-                  {img.name}
-                </p>
+                <div>
+                  <p className="truncate text-base font-semibold text-foreground" title={img.name}>
+                    {img.name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs line-through text-muted/70">{formatBytes(img.originalSizeBytes)}</span>
+                    <span className={`text-xs font-semibold ${img.sizeBytes < img.originalSizeBytes ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {formatBytes(img.sizeBytes)}
+                    </span>
+                    {img.sizeBytes < img.originalSizeBytes ? (
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded">
+                        -{Math.round(((img.originalSizeBytes - img.sizeBytes) / img.originalSizeBytes) * 100)}%
+                      </span>
+                    ) : img.sizeBytes > img.originalSizeBytes ? (
+                      <span className="text-[10px] font-bold text-red-700 bg-red-100/80 px-1.5 py-0.5 rounded">
+                        +{Math.round(((img.sizeBytes - img.originalSizeBytes) / img.originalSizeBytes) * 100)}%
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
                 <div className="flex items-center gap-3">
                   <a
                     href={img.url}
